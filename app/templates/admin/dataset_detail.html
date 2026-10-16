@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Dataset Details #{{ dataset.id }} - PhishShield Admin{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+  <div class="col-md-7">
+    <div class="d-flex align-items-center">
+      <a href="{{ url_for('admin.datasets_list') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h3 class="fw-bold text-white mb-0">Dataset: {{ dataset.original_filename }}</h3>
+        <small class="text-secondary">Uploaded on {{ dataset.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-5 text-md-end mt-3 mt-md-0">
+    {% if dataset.upload_status == 'valid' %}
+      <a href="{{ url_for('admin.training') }}" class="btn btn-warning text-dark btn-sm fw-semibold">
+        <i class="bi bi-cpu me-1"></i> Train Models on this Dataset
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Metadata Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-md-3">
+    <div class="stat-widget">
+      <div>
+        <div class="stat-value text-white">{{ dataset.total_rows }}</div>
+        <div class="stat-label">Total Valid Rows</div>
+      </div>
+      <div class="stat-icon bg-info bg-opacity-25 text-info">
+        <i class="bi bi-list-ol"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-3">
+    <div class="stat-widget">
+      <div>
+        <div class="stat-value text-danger">{{ dataset.phishing_count }}</div>
+        <div class="stat-label">Phishing Samples</div>
+      </div>
+      <div class="stat-icon bg-danger bg-opacity-25 text-danger">
+        <i class="bi bi-bug"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-3">
+    <div class="stat-widget">
+      <div>
+        <div class="stat-value text-success">{{ dataset.legitimate_count }}</div>
+        <div class="stat-label">Legitimate Samples</div>
+      </div>
+      <div class="stat-icon bg-success bg-opacity-25 text-success">
+        <i class="bi bi-shield-check"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-3">
+    <div class="stat-widget">
+      <div>
+        <div class="stat-value text-warning">{{ dataset.duplicate_rows }}</div>
+        <div class="stat-label">Duplicates Identified</div>
+      </div>
+      <div class="stat-icon bg-warning bg-opacity-25 text-warning">
+        <i class="bi bi-files"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Technical File Information & Validation Errors -->
+<div class="cyber-card p-4 mb-4">
+  <h5 class="text-white fw-bold mb-3"><i class="bi bi-file-earmark-check text-info me-2"></i>Integrity & Validation Report</h5>
+  
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <ul class="list-group list-group-flush bg-transparent">
+        <li class="list-group-item bg-transparent text-secondary border-secondary border-opacity-25 px-0">
+          <strong>Validation Status:</strong>
+          <span class="badge {{ 'bg-success' if dataset.upload_status == 'valid' else 'bg-danger' }} ms-2">
+            {{ dataset.upload_status.upper() }}
+          </span>
+        </li>
+        <li class="list-group-item bg-transparent text-secondary border-secondary border-opacity-25 px-0">
+          <strong>Storage File:</strong> <code>{{ dataset.storage_filename }}</code>
+        </li>
+        <li class="list-group-item bg-transparent text-secondary border-secondary border-opacity-25 px-0">
+          <strong>File Size:</strong> {{ (dataset.file_size_bytes / 1024) | round(2) }} KB
+        </li>
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <ul class="list-group list-group-flush bg-transparent">
+        <li class="list-group-item bg-transparent text-secondary border-secondary border-opacity-25 px-0">
+          <strong>SHA-256 Checksum:</strong> <code class="small text-info">{{ dataset.file_hash }}</code>
+        </li>
+        <li class="list-group-item bg-transparent text-secondary border-secondary border-opacity-25 px-0">
+          <strong>Missing Values Count:</strong> {{ dataset.missing_values_count }}
+        </li>
+        <li class="list-group-item bg-transparent text-secondary border-secondary border-opacity-25 px-0">
+          <strong>Class Balance Ratio:</strong> 
+          {% if dataset.legitimate_count > 0 %}
+            {{ (dataset.phishing_count / dataset.legitimate_count) | round(2) }} : 1.0 (Phishing : Legitimate)
+          {% else %}
+            N/A
+          {% endif %}
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  {% if dataset.validation_errors %}
+    <div class="alert alert-danger bg-danger bg-opacity-10 border border-danger text-danger mb-0">
+      <strong class="d-block mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Validation Warnings / Errors:</strong>
+      <ul class="mb-0 ps-3">
+        {% for err in dataset.validation_errors %}
+          <li>{{ err }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

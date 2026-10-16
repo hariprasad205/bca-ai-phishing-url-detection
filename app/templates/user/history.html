@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Scan History - PhishShield AI{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+  <div class="col-md-7">
+    <h3 class="fw-bold text-white mb-1">
+      <i class="bi bi-clock-history text-info me-2"></i>My Scan History
+    </h3>
+    <p class="text-secondary mb-0">Browse and export your historical URL threat assessments</p>
+  </div>
+  <div class="col-md-5 text-md-end mt-3 mt-md-0">
+    <a href="{{ url_for('main.export_user_scans_csv') }}" data-device-timezone class="btn btn-outline-info btn-sm">
+      <i class="bi bi-file-earmark-spreadsheet me-1"></i> Download History (CSV)
+    </a>
+  </div>
+</div>
+
+<!-- Search & Filtering Bar -->
+<div class="cyber-card p-3 mb-4">
+  <form method="GET" action="{{ url_for('main.history') }}" class="row g-2 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label text-secondary small text-uppercase fw-semibold mb-1">Search URL</label>
+      <input type="text" name="q" class="form-control form-control-sm cyber-input" placeholder="Search domain or path..." value="{{ search_query }}">
+    </div>
+
+    <div class="col-md-2">
+      <label class="form-label text-secondary small text-uppercase fw-semibold mb-1">Prediction</label>
+      <select name="label" class="form-select form-select-sm cyber-input">
+        <option value="">All Classes</option>
+        <option value="phishing" {% if label_filter == 'phishing' %}selected{% endif %}>Phishing</option>
+        <option value="legitimate" {% if label_filter == 'legitimate' %}selected{% endif %}>Legitimate</option>
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <label class="form-label text-secondary small text-uppercase fw-semibold mb-1">Risk Category</label>
+      <select name="category" class="form-select form-select-sm cyber-input">
+        <option value="">All Categories</option>
+        <option value="Low" {% if category_filter == 'Low' %}selected{% endif %}>Low (0-24)</option>
+        <option value="Moderate" {% if category_filter == 'Moderate' %}selected{% endif %}>Moderate (25-54)</option>
+        <option value="High" {% if category_filter == 'High' %}selected{% endif %}>High (55-79)</option>
+        <option value="Critical" {% if category_filter == 'Critical' %}selected{% endif %}>Critical (80-100)</option>
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <label class="form-label text-secondary small text-uppercase fw-semibold mb-1">From Date</label>
+      <input type="date" name="start_date" class="form-control form-control-sm cyber-input" value="{{ start_date }}">
+    </div>
+
+    <div class="col-md-2">
+      <label class="form-label text-secondary small text-uppercase fw-semibold mb-1">To Date</label>
+      <input type="date" name="end_date" class="form-control form-control-sm cyber-input" value="{{ end_date }}">
+    </div>
+
+    <div class="col-md-1 d-grid">
+      <button type="submit" class="btn btn-cyber-primary btn-sm">
+        <i class="bi bi-funnel"></i> Filter
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Scans Results Table -->
+<div class="cyber-card mb-4">
+  <div class="table-responsive">
+    <table class="table table-cyber mb-0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Submitted URL</th>
+          <th>Prediction</th>
+          <th>Risk Score</th>
+          <th>Category</th>
+          <th>Probability</th>
+          <th>Latency</th>
+          <th>Timestamp (Device Local Time)</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if scans %}
+          {% for scan in scans %}
+            <tr>
+              <td><code>#{{ scan.id }}</code></td>
+              <td>
+                <span class="text-truncate d-inline-block font-monospace small" style="max-width: 280px;" title="{{ scan.url }}">
+                  {{ scan.url }}
+                </span>
+              </td>
+              <td>
+                {% if scan.prediction_label == 'phishing' %}
+                  <span class="badge-phishing"><i class="bi bi-exclamation-triangle-fill me-1"></i> Phishing</span>
+                {% else %}
+                  <span class="badge-legitimate"><i class="bi bi-check-circle-fill me-1"></i> Legitimate</span>
+                {% endif %}
+              </td>
+              <td><strong>{{ scan.risk_score }}</strong> / 100</td>
+              <td>
+                <span class="badge badge-risk-{{ scan.risk_category | lower }}">
+                  {{ scan.risk_category }}
+                </span>
+              </td>
+              <td>{{ (scan.probability * 100) | round(1) }}%</td>
+              <td>{{ scan.latency_ms }} ms</td>
+              <td>
+                <time datetime="{{ scan.created_at.strftime('%Y-%m-%dT%H:%M:%S') }}Z" data-utc-timestamp>
+                  {{ scan.created_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
+                </time>
+              </td>
+              <td class="text-end">
+                <a href="{{ url_for('main.scan_detail', scan_id=scan.id) }}" class="btn btn-sm btn-outline-info me-1" title="View Full Inspection">
+                  <i class="bi bi-eye"></i> Details
+                </a>
+                <a href="{{ url_for('main.scan_audit_pdf', scan_id=scan.id) }}" data-device-timezone class="btn btn-sm btn-outline-danger" title="Download ReportLab PDF">
+                  <i class="bi bi-file-earmark-pdf"></i> PDF
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="9" class="text-center py-4 text-secondary">
+              <i class="bi bi-search fs-2 d-block mb-2"></i>
+              No scan records found matching the active criteria.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if pagination.pages > 1 %}
+    <div class="p-3 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+      <small class="text-secondary">
+        Showing page {{ pagination.page }} of {{ pagination.pages }} ({{ pagination.total }} total scans)
+      </small>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          {% if pagination.has_prev %}
+            <li class="page-item">
+              <a class="page-link bg-dark text-info border-secondary" href="{{ url_for('main.history', page=pagination.prev_num, q=search_query, label=label_filter, category=category_filter, start_date=start_date, end_date=end_date) }}">Previous</a>
+            </li>
+          {% endif %}
+          {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if p %}
+              <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                <a class="page-link {% if p == pagination.page %}bg-primary text-white border-primary{% else %}bg-dark text-info border-secondary{% endif %}" href="{{ url_for('main.history', page=p, q=search_query, label=label_filter, category=category_filter, start_date=start_date, end_date=end_date) }}">{{ p }}</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link bg-dark text-secondary border-secondary">...</span></li>
+            {% endif %}
+          {% endfor %}
+          {% if pagination.has_next %}
+            <li class="page-item">
+              <a class="page-link bg-dark text-info border-secondary" href="{{ url_for('main.history', page=pagination.next_num, q=search_query, label=label_filter, category=category_filter, start_date=start_date, end_date=end_date) }}">Next</a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const formatter = new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+      timeZoneName: "short",
+    });
+
+    document.querySelectorAll("time[data-utc-timestamp]").forEach(function (element) {
+      const timestamp = new Date(element.dateTime);
+      if (Number.isNaN(timestamp.getTime())) {
+        return;
+      }
+
+      element.textContent = formatter.format(timestamp);
+      element.title = formatter.resolvedOptions().timeZone;
+    });
+  });
+</script>
+{% endblock %}

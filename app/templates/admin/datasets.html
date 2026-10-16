@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Datasets Management - PhishShield Admin{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+  <div class="col-md-7">
+    <h3 class="fw-bold text-white mb-1">
+      <i class="bi bi-file-earmark-spreadsheet text-info me-2"></i>Dataset Repository & Validation
+    </h3>
+    <p class="text-secondary mb-0">Upload and inspect URL datasets for machine-learning model training</p>
+  </div>
+  <div class="col-md-5 text-md-end mt-3 mt-md-0">
+    <a href="{{ url_for('admin.dataset_upload') }}" class="btn btn-cyber-primary btn-sm me-2">
+      <i class="bi bi-cloud-arrow-up me-1"></i> Upload New CSV
+    </a>
+    <a href="{{ url_for('admin.training') }}" class="btn btn-warning btn-sm text-dark fw-semibold">
+      <i class="bi bi-cpu me-1"></i> Train on Dataset
+    </a>
+  </div>
+</div>
+
+<div class="cyber-card">
+  <div class="table-responsive">
+    <table class="table table-cyber mb-0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Original Filename</th>
+          <th>Status</th>
+          <th>Total Rows</th>
+          <th>Phishing</th>
+          <th>Legitimate</th>
+          <th>Duplicates</th>
+          <th>File Size</th>
+          <th>Uploaded At</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if datasets %}
+          {% for d in datasets %}
+            <tr>
+              <td><code>#{{ d.id }}</code></td>
+              <td><strong>{{ d.original_filename }}</strong></td>
+              <td>
+                <span class="badge {{ 'bg-success' if d.upload_status == 'valid' else 'bg-danger' }}">
+                  {{ d.upload_status.upper() }}
+                </span>
+              </td>
+              <td>{{ d.total_rows }}</td>
+              <td><span class="text-danger">{{ d.phishing_count }}</span></td>
+              <td><span class="text-success">{{ d.legitimate_count }}</span></td>
+              <td>{{ d.duplicate_rows }}</td>
+              <td>{{ (d.file_size_bytes / 1024) | round(1) }} KB</td>
+              <td>{{ d.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+              <td class="text-end">
+                <a href="{{ url_for('admin.dataset_detail', dataset_id=d.id) }}" class="btn btn-sm btn-outline-info">
+                  <i class="bi bi-eye"></i> Validation Details
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="10" class="text-center py-4 text-secondary">
+              No datasets uploaded yet. Click "Upload New CSV" or run CLI demo seeding to load a dataset.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

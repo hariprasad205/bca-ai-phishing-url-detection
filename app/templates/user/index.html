@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Home - AI Phishing URL Detection{% endblock %}
+
+{% block content %}
+<div class="row align-items-center py-5">
+  <div class="col-lg-7">
+    <div class="badge bg-primary bg-opacity-25 text-primary border border-primary px-3 py-2 rounded-pill mb-3">
+      <i class="bi bi-shield-check me-1"></i> Academic Demonstration & Viva Ready
+    </div>
+    <h1 class="display-4 fw-bold text-white mb-3">
+      AI-Based Phishing URL Detection System
+    </h1>
+    <p class="lead text-secondary mb-4">
+      An enterprise-grade, machine-learning cybersecurity platform that analyzes untrusted URLs in real-time.
+      Extracts 13 lexical indicators, evaluates Logistic Regression, Random Forest, and Decision Tree algorithms,
+      and provides verifiable risk scoring with downloadable PDF audit certificates.
+    </p>
+
+    <div class="d-flex flex-wrap gap-3 mb-5">
+      <a href="{{ url_for('auth.register') }}" class="btn btn-cyber-primary btn-lg px-4">
+        <i class="bi bi-person-plus me-2"></i> Get Started / Register
+      </a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-outline-info btn-lg px-4">
+        <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+      </a>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-sm-4">
+        <div class="border border-secondary border-opacity-25 p-3 rounded bg-dark bg-opacity-25">
+          <h4 class="text-info mb-1 fw-bold">Zero-Execution</h4>
+          <small class="text-secondary">Safe lexical static analysis without outbound HTTP requests</small>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="border border-secondary border-opacity-25 p-3 rounded bg-dark bg-opacity-25">
+          <h4 class="text-info mb-1 fw-bold">Auto-Selector</h4>
+          <small class="text-secondary">Automatic algorithm benchmarking with tie-breaking gates</small>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="border border-secondary border-opacity-25 p-3 rounded bg-dark bg-opacity-25">
+          <h4 class="text-info mb-1 fw-bold">Audit PDF</h4>
+          <small class="text-secondary">Official ReportLab PDF certificates with ownership validation</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5 mt-5 mt-lg-0">
+    <div class="cyber-card p-4">
+      <div class="d-flex align-items-center mb-3">
+        <div class="bg-primary bg-opacity-25 p-3 rounded-circle text-primary me-3">
+          <i class="bi bi-cpu fs-3"></i>
+        </div>
+        <div>
+          <h5 class="mb-0 text-white fw-bold">System Architecture</h5>
+          <small class="text-secondary">Pipeline Overview</small>
+        </div>
+      </div>
+
+      <ul class="list-group list-group-flush bg-transparent">
+        <li class="list-group-item bg-transparent text-secondary border-secondary border-opacity-25 px-0 py-2">
+          <i class="bi bi-check-circle-fill text-success me-2"></i> <strong>Mandatory Database:</strong> MySQL 8.x with PyMySQL
+        </li>
+        <li class="list-group-item bg-transparent text-secondary border-secondary border-opacity-25 px-0 py-2">
+          <i class="bi bi-check-circle-fill text-success me-2"></i> <strong>Application Framework:</strong> Flask Factory Pattern
+        </li>
+        <li class="list-group-item bg-transparent text-secondary border-secondary border-opacity-25 px-0 py-2">
+          <i class="bi bi-check-circle-fill text-success me-2"></i> <strong>Algorithms:</strong> Logistic Regression, Random Forest, Decision Tree
+        </li>
+        <li class="list-group-item bg-transparent text-secondary border-secondary border-opacity-25 px-0 py-2">
+          <i class="bi bi-check-circle-fill text-success me-2"></i> <strong>Feature Engineering:</strong> 13 Lexical Signals & Suspicious Tokens
+        </li>
+        <li class="list-group-item bg-transparent text-secondary border-secondary border-opacity-25 px-0 py-2">
+          <i class="bi bi-check-circle-fill text-success me-2"></i> <strong>Security:</strong> CSRF Protection, Werkzeug Hashing, IDOR Prevention
+        </li>
+      </ul>
+
+      <div class="alert alert-info border-0 bg-info bg-opacity-10 text-info mt-3 mb-0 small">
+        <i class="bi bi-info-circle me-1"></i> Built for academic viva evaluation with reproducible seeds and real-time inference.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

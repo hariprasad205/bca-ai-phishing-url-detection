@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Train Models - PhishShield Admin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+  <div class="col-lg-9">
+    <div class="cyber-card p-4">
+      <div class="d-flex align-items-center mb-4">
+        <div class="bg-warning bg-opacity-25 p-3 rounded-circle text-warning me-3">
+          <i class="bi bi-cpu fs-2"></i>
+        </div>
+        <div>
+          <h4 class="text-white fw-bold mb-0">Execute ML Training Pipeline</h4>
+          <small class="text-secondary">Train, benchmark, and automatically select the optimal algorithm</small>
+        </div>
+      </div>
+
+      <div class="alert alert-dark border border-secondary border-opacity-25 bg-dark bg-opacity-50 text-secondary small mb-4">
+        <h6 class="text-white mb-2"><i class="bi bi-diagram-3 text-info me-1"></i> Multi-Algorithm Pipeline Specification:</h6>
+        <div class="row g-2">
+          <div class="col-md-4">
+            <strong class="text-white">1. Random Forest</strong>
+            <p class="mb-0 text-secondary" style="font-size: 0.8rem;">Ensemble of 100 bagged trees with stratified bootstrap splits.</p>
+          </div>
+          <div class="col-md-4">
+            <strong class="text-white">2. Logistic Regression</strong>
+            <p class="mb-0 text-secondary" style="font-size: 0.8rem;">L2-regularized linear model with Standardized feature vectors.</p>
+          </div>
+          <div class="col-md-4">
+            <strong class="text-white">3. Decision Tree</strong>
+            <p class="mb-0 text-secondary" style="font-size: 0.8rem;">Pruned decision tree (max depth 8) for transparent rule inspection.</p>
+          </div>
+        </div>
+      </div>
+
+      {% if valid_datasets %}
+        <form method="POST" action="{{ url_for('admin.training') }}">
+          {{ form.hidden_tag() }}
+
+          <div class="mb-4">
+            <label class="form-label text-secondary small text-uppercase fw-semibold" for="dataset_id">
+              Choose Verified Training Dataset
+            </label>
+            {{ form.dataset_id(class="form-select cyber-input") }}
+            {% for error in form.dataset_id.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="bg-dark bg-opacity-50 p-3 rounded border border-secondary border-opacity-25 mb-4">
+            <h6 class="text-secondary small text-uppercase fw-semibold mb-2">Automated Selection Gates (Configurable):</h6>
+            <div class="row g-2 text-secondary small">
+              <div class="col-sm-6">
+                <i class="bi bi-check2-circle text-success me-1"></i> Minimum Recall Threshold: <strong>80.0%</strong>
+              </div>
+              <div class="col-sm-6">
+                <i class="bi bi-check2-circle text-success me-1"></i> Max Inference Latency Ceiling: <strong>100.0 ms</strong>
+              </div>
+              <div class="col-sm-6">
+                <i class="bi bi-check2-circle text-success me-1"></i> Data Leakage Prevention: <strong>Scaler fitted only on train split</strong>
+              </div>
+              <div class="col-sm-6">
+                <i class="bi bi-check2-circle text-success me-1"></i> Split Methodology: <strong>75% Train / 25% Held-Out Test</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('admin.model_comparison') }}" class="btn btn-outline-secondary">View Previous Runs</a>
+            {{ form.submit(class="btn btn-warning text-dark fw-bold px-4") }}
+          </div>
+        </form>
+      {% else %}
+        <div class="text-center py-4">
+          <i class="bi bi-exclamation-circle text-warning fs-1 mb-3 d-block"></i>
+          <h5 class="text-white">No Valid Datasets Available</h5>
+          <p class="text-secondary mb-3">You must first upload a validated CSV dataset before training can commence.</p>
+          <a href="{{ url_for('admin.dataset_upload') }}" class="btn btn-cyber-primary">Upload Dataset Now</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

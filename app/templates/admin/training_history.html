@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Training History - PhishShield Admin{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+  <div>
+    <h3 class="fw-bold text-white mb-1">
+      <i class="bi bi-journal-text text-info me-2"></i>Training Runs & Selection History
+    </h3>
+    <p class="text-secondary mb-0">Audit log of all pipeline executions, evaluation summaries, and selection reasons</p>
+  </div>
+  <div>
+    <a href="{{ url_for('admin.export_training_history_csv') }}" class="btn btn-outline-info btn-sm">
+      <i class="bi bi-download me-1"></i> Download History (CSV)
+    </a>
+  </div>
+</div>
+
+<div class="cyber-card">
+  <div class="table-responsive">
+    <table class="table table-cyber table-wide-xl mb-0">
+      <thead>
+        <tr>
+          <th>Run ID</th>
+          <th>Dataset</th>
+          <th>Status</th>
+          <th>Evaluated</th>
+          <th>Selected Model</th>
+          <th>Selection Rationale / Gate Checks</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if runs %}
+          {% for r in runs %}
+            <tr>
+              <td><code class="code-id">{{ r.run_identifier }}</code></td>
+              <td><strong class="text-white">{{ r.dataset.original_filename if r.dataset else 'N/A' }}</strong></td>
+              <td>
+                <span class="badge {{ 'bg-success' if r.status == 'completed' else 'bg-danger' }} px-2 py-1 fw-bold">
+                  {{ r.status.upper() }}
+                </span>
+              </td>
+              <td><span class="text-secondary fw-semibold">{{ r.evaluated_models_count }} models</span></td>
+              <td><strong class="text-info">{{ r.selected_model_name or 'None' }}</strong></td>
+              <td>
+                <span class="text-secondary small d-inline-block" style="max-width: 420px; line-height: 1.4;">
+                  {{ r.selection_reason or r.error_message or 'No notes recorded.' }}
+                </span>
+              </td>
+              <td><span class="text-secondary font-monospace small">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</span></td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" class="text-center py-5 text-secondary">
+              <i class="bi bi-journal-x fs-1 d-block mb-2 text-info opacity-75"></i>
+              No training runs executed yet.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

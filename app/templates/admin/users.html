@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - PhishShield Admin{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+  <div class="col-md-8">
+    <h3 class="fw-bold text-white mb-1">
+      <i class="bi bi-people text-info me-2"></i>User Account Management
+    </h3>
+    <p class="text-secondary mb-0">Manage registered user accounts, roles, and access credentials</p>
+  </div>
+</div>
+
+<div class="cyber-card">
+  <div class="table-responsive">
+    <table class="table table-cyber mb-0">
+      <thead>
+        <tr>
+          <th>User ID</th>
+          <th>Username</th>
+          <th>Email Address</th>
+          <th>Role</th>
+          <th>Account Status</th>
+          <th>Total Scans</th>
+          <th>Created At</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td><code>#{{ u.id }}</code></td>
+            <td><strong>{{ u.username }}</strong></td>
+            <td>{{ u.email }}</td>
+            <td>
+              <span class="badge {{ 'bg-warning text-dark' if u.is_admin else 'bg-secondary' }}">
+                {{ u.role.upper() }}
+              </span>
+            </td>
+            <td>
+              <span class="badge {{ 'bg-success' if u.is_active_account else 'bg-danger' }}">
+                {{ 'Active' if u.is_active_account else 'Suspended' }}
+              </span>
+            </td>
+            <td>{{ u.scans.count() }}</td>
+            <td>{{ u.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td class="text-end">
+              {% if u.id != current_user.id %}
+                <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=u.id) }}" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {% if u.is_active_account %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Suspend User">
+                      <i class="bi bi-person-x"></i> Deactivate
+                    </button>
+                  {% else %}
+                    <button type="submit" class="btn btn-sm btn-outline-success" title="Activate User">
+                      <i class="bi bi-person-check"></i> Activate
+                    </button>
+                  {% endif %}
+                </form>
+              {% else %}
+                <span class="badge bg-dark text-secondary">Current Session</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

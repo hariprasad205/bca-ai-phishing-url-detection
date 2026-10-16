@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Dataset - PhishShield Admin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+  <div class="col-lg-8">
+    <div class="cyber-card p-4">
+      <div class="d-flex align-items-center mb-4">
+        <a href="{{ url_for('admin.datasets_list') }}" class="btn btn-outline-secondary btn-sm me-3">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+          <h4 class="text-white fw-bold mb-0">Upload & Validate URL Dataset</h4>
+          <small class="text-secondary">Strict CSV format checks, duplicate detection, and class balance analysis</small>
+        </div>
+      </div>
+
+      <div class="alert alert-dark border border-secondary border-opacity-25 bg-dark bg-opacity-50 text-secondary small mb-4">
+        <h6 class="text-white mb-2"><i class="bi bi-info-circle text-info me-1"></i> Dataset Specification Requirements:</h6>
+        <ul class="mb-0 ps-3">
+          <li>Must be a standard <strong>CSV file (.csv)</strong> encoded in UTF-8 or Latin-1.</li>
+          <li>Must contain a <strong>URL column</strong> (e.g. <code>url</code>, <code>urls</code>, <code>web_url</code>).</li>
+          <li>Must contain a binary <strong>Target/Label column</strong> (e.g. <code>label</code>, <code>status</code>, <code>target</code>) with values mapping to <code>phishing</code>/<code>1</code> or <code>legitimate</code>/<code>0</code>.</li>
+          <li>Alternatively, precomputed datasets containing all 13 canonical features are accepted.</li>
+          <li>Maximum file size: 16 MB. Minimum required rows: 20.</li>
+        </ul>
+      </div>
+
+      <form method="POST" action="{{ url_for('admin.dataset_upload') }}" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-4">
+          <label class="form-label text-secondary small text-uppercase fw-semibold" for="csv_file">Select CSV File</label>
+          {{ form.csv_file(class="form-control cyber-input") }}
+          {% for error in form.csv_file.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
+          <a href="{{ url_for('admin.datasets_list') }}" class="btn btn-outline-secondary">Cancel</a>
+          {{ form.submit(class="btn btn-cyber-primary px-4") }}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

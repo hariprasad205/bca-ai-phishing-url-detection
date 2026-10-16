@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - PhishShield AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+  <div class="col-md-6 col-lg-5 col-xl-4">
+    <div class="cyber-card p-4">
+      <div class="text-center mb-4">
+        <div class="bg-primary bg-opacity-25 p-3 rounded-circle d-inline-block text-primary mb-2">
+          <i class="bi bi-shield-lock fs-2"></i>
+        </div>
+        <h4 class="text-white fw-bold mb-1">Account Sign In</h4>
+        <small class="text-secondary">Access your cybersecurity dashboard and scan history</small>
+      </div>
+
+      <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+          {{ form.username_or_email.label(class="form-label text-secondary small text-uppercase fw-semibold") }}
+          {{ form.username_or_email(class="form-control cyber-input", placeholder="Username or email address") }}
+          {% for error in form.username_or_email.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="mb-4">
+          {{ form.password.label(class="form-label text-secondary small text-uppercase fw-semibold") }}
+          {{ form.password(class="form-control cyber-input", placeholder="Enter your password") }}
+          {% for error in form.password.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="d-grid mb-3">
+          {{ form.submit(class="btn btn-cyber-primary py-2") }}
+        </div>
+
+        <div class="text-center">
+          <small class="text-secondary">
+            Don't have an account? <a href="{{ url_for('auth.register') }}" class="text-info text-decoration-none">Register here</a>
+          </small>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

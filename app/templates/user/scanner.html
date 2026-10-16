@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}URL Scanner - PhishShield AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+  <div class="col-lg-9 col-xl-8">
+    <div class="cyber-card p-4 mb-4">
+      <div class="d-flex align-items-center mb-3">
+        <div class="bg-primary bg-opacity-25 p-3 rounded-circle text-primary me-3">
+          <i class="bi bi-shield-shaded fs-2"></i>
+        </div>
+        <div>
+          <h4 class="text-white fw-bold mb-0">URL Phishing Inspection Engine</h4>
+          <small class="text-secondary">Static Lexical Feature Extraction & ML Classification</small>
+        </div>
+      </div>
+
+      <div class="alert alert-dark border border-secondary border-opacity-25 bg-dark bg-opacity-50 text-secondary small mb-4">
+        <div class="d-flex">
+          <i class="bi bi-shield-exclamation text-warning fs-4 me-3"></i>
+          <div>
+            <strong class="text-white d-block mb-1">Safety & Execution Notice</strong>
+            This engine performs strictly local lexical pattern extraction. <strong>The server will never ping, visit, crawl, or execute remote code from submitted URLs.</strong>
+            Remember: An HTTPS padlock indicates encrypted transport only; modern phishing campaigns routinely acquire valid TLS/SSL certificates.
+          </div>
+        </div>
+      </div>
+
+      <form id="urlScanForm" method="POST" action="{{ url_for('main.scan') }}">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+          <label class="form-label text-secondary small text-uppercase fw-semibold" for="urlInput">
+            Target URL to Analyze
+          </label>
+          <div class="input-group input-group-lg">
+            <span class="input-group-text bg-dark border-secondary text-secondary">
+              <i class="bi bi-link-45deg fs-4"></i>
+            </span>
+            {{ form.url(id="urlInput", class="form-control cyber-input", placeholder="https://secure-update-account.com/login.php") }}
+            <button id="scanSubmitBtn" class="btn btn-cyber-primary px-4" type="submit">
+              <span id="scanSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+              <span id="scanBtnText"><i class="bi bi-cpu me-1"></i> Analyze URL</span>
+            </button>
+          </div>
+          {% for error in form.url.errors %}
+            <div class="text-danger small mt-2">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+{% endblock %}

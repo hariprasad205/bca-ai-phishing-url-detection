@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Model Comparison & Benchmarking - PhishShield Admin{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+  <div>
+    <h3 class="fw-bold text-white mb-1">
+      <i class="bi bi-bar-chart-line text-info me-2"></i>Algorithm Benchmark & Model Comparison
+    </h3>
+    <p class="text-secondary mb-0">Held-out test set performance, latency metrics, and confusion matrix audit</p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{{ url_for('admin.export_models_csv') }}" class="btn btn-outline-info btn-sm">
+      <i class="bi bi-file-earmark-spreadsheet me-1"></i> Download Comparison (CSV)
+    </a>
+    <a href="{{ url_for('admin.training') }}" class="btn btn-warning text-dark btn-sm fw-bold">
+      <i class="bi bi-play-circle me-1"></i> Retrain Pipeline
+    </a>
+  </div>
+</div>
+
+<!-- Comparison Chart -->
+<div class="cyber-card p-4 mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h5 class="text-white fw-bold mb-0">Algorithm Performance Comparison (Test Partition)</h5>
+      <span class="text-secondary small">Evaluated on Held-Out 25% Stratified Test Split (Zero Data Leakage)</span>
+    </div>
+    <span class="badge badge-evaluated">Multi-Metric Verification</span>
+  </div>
+  <div style="position: relative; height: 320px;">
+    {% set models_data = [] %}
+    {% for m in models %}
+      {% set _ = models_data.append({
+        'name': m.name,
+        'version': m.version,
+        'accuracy': m.accuracy,
+        'recall_score': m.recall_score,
+        'f1_score': m.f1_score,
+        'precision_score': m.precision_score
+      }) %}
+    {% endfor %}
+    <canvas id="modelMetricsChart" data-models='{{ models_data | tojson }}'></canvas>
+  </div>
+</div>
+
+<!-- Benchmarking Table -->
+<div class="cyber-card mb-4">
+  <div class="cyber-card-header d-flex justify-content-between align-items-center">
+    <h5 class="text-white fw-bold mb-0">Model Comparison Table</h5>
+    <span class="badge badge-evaluated">Live Database Evaluation Records</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-cyber table-wide-xl mb-0">
+      <thead>
+        <tr>
+          <th>Algorithm Candidate</th>
+          <th>Status</th>
+          <th>Accuracy</th>
+          <th>Recall (Phish)</th>
+          <th>F1-Score</th>
+          <th>Precision</th>
+          <th>ROC-AUC</th>
+          <th>Avg Latency</th>
+          <th>Training Time</th>
+          <th>Composite Score</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if models %}
+          {% for m in models %}
+            <tr class="{% if m.is_active %}table-active{% endif %}">
+              <td>
+                <div class="fw-bold text-white">{{ m.name }}</div>
+                <code class="code-version mt-1 d-inline-block">{{ m.version }}</code>
+              </td>
+              <td>
+                {% if m.is_active %}
+                  <span class="badge badge-active-model px-2 py-1"><i class="bi bi-star-fill me-1"></i> ACTIVE</span>
+                {% else %}
+                  <span class="badge badge-evaluated px-2 py-1">Evaluated</span>
+                {% endif %}
+              </td>
+              <td><strong class="text-white">{{ (m.accuracy * 100) | round(2) }}%</strong></td>
+              <td><strong style="color: #F87171;">{{ (m.recall_score * 100) | round(2) }}%</strong></td>
+              <td><strong style="color: #34D399;">{{ (m.f1_score * 100) | round(2) }}%</strong></td>
+              <td><span class="text-secondary fw-semibold">{{ (m.precision_score * 100) | round(2) }}%</span></td>
+              <td><span class="text-secondary">{{ (m.roc_auc * 100) | round(2) if m.roc_auc is not none else 'N/A' }}%</span></td>
+              <td><span class="text-secondary fw-semibold">{{ m.avg_latency_ms }} ms</span></td>
+              <td><span class="text-secondary">{{ m.training_time_sec }} s</span></td>
+              <td>
+                <span class="badge" style="background-color: rgba(34, 211, 238, 0.2); color: #22D3EE; border: 1px solid rgba(34, 211, 238, 0.4); font-size: 0.85rem; font-weight: 700;">
+                  {{ m.selection_score }}
+                </span>
+              </td>
+              <td class="text-end">
+                {% if not m.is_active %}
+                  <form method="POST" action="{{ url_for('admin.activate_model', model_id=m.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-outline-warning fw-semibold">
+                      <i class="bi bi-toggle-on me-1"></i> Make Active
+                    </button>
+                  </form>
+                {% else %}
+                  <span class="badge bg-success bg-opacity-25 text-success border border-success px-2 py-1 fw-bold">
+                    <i class="bi bi-check2-circle me-1"></i> In Production
+                  </span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="11" class="text-center py-5 text-secondary">
+              <i class="bi bi-cpu fs-1 d-block mb-2 text-info opacity-75"></i>
+              No models evaluated yet. Execute a training run to generate benchmark data.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Confusion Matrices Grid -->
+<div class="mb-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h5 class="text-white fw-bold mb-0">
+      <i class="bi bi-grid-3x3 text-info me-2"></i>Confusion Matrix Visualizations (Held-Out Test Set)
+    </h5>
+    <span class="text-secondary small">Evaluated strictly on unseen testing samples</span>
+  </div>
+
+  <div class="row g-4">
+    {% for m in models %}
+      {% set cm = m.confusion_matrix %}
+      <div class="col-md-6 col-lg-4">
+        <div class="matrix-card h-100 {% if m.is_active %}border-warning{% endif %}">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong class="text-white fs-6">{{ m.name }}</strong>
+            {% if m.is_active %}
+              <span class="badge badge-active-model small">Active</span>
+            {% else %}
+              <span class="badge badge-evaluated small">Candidate</span>
+            {% endif %}
+          </div>
+          <code class="code-version d-block mb-3 text-truncate" title="{{ m.version }}">{{ m.version }}</code>
+
+          <table class="matrix-table text-center">
+            <thead>
+              <tr>
+                <th class="matrix-header" style="width: 34%;"></th>
+                <th class="matrix-header" style="width: 33%;">Pred Legit (0)</th>
+                <th class="matrix-header" style="width: 33%;">Pred Phish (1)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th class="matrix-header text-start">Actual Legit (0)</th>
+                <td class="matrix-cell-tn">
+                  <div>{{ cm[0][0] }}</div>
+                  <small class="d-block" style="font-size: 0.65rem; opacity: 0.85;">TN</small>
+                </td>
+                <td class="matrix-cell-fp">
+                  <div>{{ cm[0][1] }}</div>
+                  <small class="d-block" style="font-size: 0.65rem; opacity: 0.85;">FP</small>
+                </td>
+              </tr>
+              <tr>
+                <th class="matrix-header text-start">Actual Phish (1)</th>
+                <td class="matrix-cell-fn">
+                  <div>{{ cm[1][0] }}</div>
+                  <small class="d-block" style="font-size: 0.65rem; opacity: 0.85;">FN</small>
+                </td>
+                <td class="matrix-cell-tp">
+                  <div>{{ cm[1][1] }}</div>
+                  <small class="d-block" style="font-size: 0.65rem; opacity: 0.85;">TP</small>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="d-flex justify-content-between align-items-center mt-3 pt-2" style="border-top: 1px solid var(--border-color);">
+            <span class="small text-secondary">
+              F1-Score: <strong style="color: #34D399;">{{ (m.f1_score * 100) | round(2) }}%</strong>
+            </span>
+            <span class="small text-secondary">
+              Recall: <strong style="color: #F87171;">{{ (m.recall_score * 100) | round(2) }}%</strong>
+            </span>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

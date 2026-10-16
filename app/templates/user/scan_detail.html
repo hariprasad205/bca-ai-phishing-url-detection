@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Details #{{ scan.id }} - PhishShield AI{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+  <div class="col-md-7">
+    <div class="d-flex align-items-center">
+      <a href="{{ url_for('main.history') }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h3 class="fw-bold text-white mb-0">Scan Inspection #{{ scan.id }}</h3>
+        <small class="text-secondary">Scanned on {{ scan.created_at.strftime('%B %d, %Y at %H:%M:%S UTC') }}</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-5 text-md-end mt-3 mt-md-0">
+    <a href="{{ url_for('main.scan_audit_pdf', scan_id=scan.id) }}" data-device-timezone class="btn btn-danger btn-sm">
+      <i class="bi bi-file-earmark-pdf-fill me-1"></i> Download PDF Audit Certificate
+    </a>
+  </div>
+</div>
+
+<!-- Main Classification Card -->
+<div class="cyber-card p-4 mb-4">
+  <div class="row align-items-center">
+    <div class="col-lg-3 text-center border-end border-secondary border-opacity-25 pb-3 pb-lg-0">
+      <div class="risk-meter mx-auto mb-2" style="background: conic-gradient(
+        {% if scan.risk_score >= 80 %}#f43f5e{% elif scan.risk_score >= 55 %}#f97316{% elif scan.risk_score >= 25 %}#f59e0b{% else %}#10b981{% endif %} {{ scan.risk_score * 3.6 }}deg,
+        #1e293b 0deg
+      );">
+        <div class="risk-meter-inner">
+          <span class="fs-2 fw-bold text-white">{{ scan.risk_score }}</span>
+          <small class="text-secondary text-uppercase" style="font-size: 0.7rem;">Risk Score</small>
+        </div>
+      </div>
+
+      <div class="mt-2">
+        <span class="badge badge-risk-{{ scan.risk_category | lower }} px-3 py-1">
+          {{ scan.risk_category }} Risk
+        </span>
+      </div>
+    </div>
+
+    <div class="col-lg-9 ps-lg-4">
+      <div class="d-flex flex-wrap align-items-center justify-content-between mb-2">
+        <div>
+          <span class="text-secondary small text-uppercase fw-semibold d-block">ML Classification Output</span>
+          <h2 class="fw-bold mb-0 {% if scan.prediction_label == 'phishing' %}text-danger{% else %}text-success{% endif %}">
+            {% if scan.prediction_label == 'phishing' %}
+              <i class="bi bi-shield-x me-2"></i> PHISHING URL DETECTED
+            {% else %}
+              <i class="bi bi-shield-check me-2"></i> LEGITIMATE URL PREDICTED
+            {% endif %}
+          </h2>
+        </div>
+        <div class="text-lg-end mt-2 mt-lg-0">
+          <span class="badge bg-secondary p-2">Probability: {{ (scan.probability * 100) | round(2) }}%</span>
+        </div>
+      </div>
+
+      <div class="bg-dark bg-opacity-75 p-3 rounded border border-secondary border-opacity-25 my-3">
+        <small class="text-secondary text-uppercase fw-semibold d-block mb-1">Target URL Analyzed:</small>
+        <code class="text-break text-info fs-6">{{ scan.url }}</code>
+      </div>
+
+      <div class="row g-2 text-secondary small">
+        <div class="col-sm-4">
+          <i class="bi bi-cpu me-1 text-info"></i> <strong>Model:</strong> {{ scan.model_version }}
+        </div>
+        <div class="col-sm-4">
+          <i class="bi bi-stopwatch me-1 text-info"></i> <strong>Latency:</strong> {{ scan.latency_ms }} ms
+        </div>
+        <div class="col-sm-4">
+          <i class="bi bi-hash me-1 text-info"></i> <strong>SHA-256:</strong> {{ scan.url_hash[:12] }}...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lexical Indicators & Explainability -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <div class="cyber-card p-4 h-100">
+      <h5 class="text-white fw-bold mb-3">
+        <i class="bi bi-table text-info me-2"></i>Extracted Lexical Features (13 Signals)
+      </h5>
+      <p class="text-secondary small mb-3">
+        Computed purely via lexical string parsing. No server-side HTTP connections were initiated.
+      </p>
+
+      {% set f = scan.features %}
+      {% if f %}
+        <div class="table-responsive">
+          <table class="table table-cyber table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Lexical Indicator</th>
+                <th>Measured Value</th>
+                <th>Security Significance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Total URL Length</td>
+                <td><strong>{{ f.url_length }}</strong></td>
+                <td><small class="text-secondary">Abnormally long URLs (>75 chars) frequently hide redirection payloads.</small></td>
+              </tr>
+              <tr>
+                <td>Hostname Length</td>
+                <td><strong>{{ f.hostname_length }}</strong></td>
+                <td><small class="text-secondary">Domain length analysis detects deceptive typosquatting.</small></td>
+              </tr>
+              <tr>
+                <td>Dots Count (.)</td>
+                <td><strong>{{ f.num_dots }}</strong></td>
+                <td><small class="text-secondary">Excessive dots are characteristic of multi-tier spoofed domains.</small></td>
+              </tr>
+              <tr>
+                <td>Hyphens Count (-)</td>
+                <td><strong>{{ f.num_hyphens }}</strong></td>
+                <td><small class="text-secondary">Attackers use hyphens to mimic legitimate brand names.</small></td>
+              </tr>
+              <tr>
+                <td>Digits Count [0-9]</td>
+                <td><strong>{{ f.num_digits }}</strong></td>
+                <td><small class="text-secondary">High digit frequency often correlates with automated payload generation.</small></td>
+              </tr>
+              <tr>
+                <td>Subdomains Count</td>
+                <td><strong>{{ f.num_subdomains }}</strong></td>
+                <td><small class="text-secondary">Pre-domain padding to deceive end-users on mobile viewports.</small></td>
+              </tr>
+              <tr>
+                <td>HTTPS Scheme</td>
+                <td>
+                  <span class="badge {{ 'bg-success' if f.is_https else 'bg-secondary' }}">
+                    {{ 'Yes (1)' if f.is_https else 'No (0)' }}
+                  </span>
+                </td>
+                <td><small class="text-secondary">HTTPS provides transport encryption only, not legitimacy.</small></td>
+              </tr>
+              <tr>
+                <td>IP-Address Host</td>
+                <td>
+                  <span class="badge {{ 'bg-danger' if f.is_ip else 'bg-success' }}">
+                    {{ 'Yes (1)' if f.is_ip else 'No (0)' }}
+                  </span>
+                </td>
+                <td><small class="text-secondary">Raw IP hosts bypass DNS domain reputation checks.</small></td>
+              </tr>
+              <tr>
+                <td>Suspicious Tokens Count</td>
+                <td><strong class="{{ 'text-danger' if f.suspicious_token_count > 0 else 'text-success' }}">{{ f.suspicious_token_count }}</strong></td>
+                <td><small class="text-secondary">Matches for sensitive tokens ('login', 'verify', 'update', 'banking', etc.).</small></td>
+              </tr>
+              <tr>
+                <td>@ Symbol Present</td>
+                <td>
+                  <span class="badge {{ 'bg-danger' if f.has_at_symbol else 'bg-success' }}">
+                    {{ 'Yes (1)' if f.has_at_symbol else 'No (0)' }}
+                  </span>
+                </td>
+                <td><small class="text-secondary">The @ symbol causes browsers to ignore all preceding credentials.</small></td>
+              </tr>
+              <tr>
+                <td>Path Length</td>
+                <td><strong>{{ f.path_length }}</strong></td>
+                <td><small class="text-secondary">Deep nesting helps evade naive domain blocklists.</small></td>
+              </tr>
+              <tr>
+                <td>Query String Length</td>
+                <td><strong>{{ f.query_length }}</strong></td>
+                <td><small class="text-secondary">Length of query parameters carrying encoded session identifiers.</small></td>
+              </tr>
+              <tr>
+                <td>Percent Encoded (%)</td>
+                <td><strong>{{ f.percent_encoded_count }}</strong></td>
+                <td><small class="text-secondary">Hex-encoded characters used to obfuscate malicious path strings.</small></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="cyber-card p-4 h-100">
+      <h5 class="text-white fw-bold mb-3">
+        <i class="bi bi-lightbulb text-warning me-2"></i>Model Explainability Signals
+      </h5>
+
+      {% set exp = scan.explanation %}
+      {% if exp.get('risk_indicators') %}
+        <div class="mb-4">
+          <h6 class="text-secondary small text-uppercase fw-semibold mb-2">Key Diagnostic Findings:</h6>
+          <ul class="list-group list-group-flush bg-transparent">
+            {% for item in exp['risk_indicators'] %}
+              <li class="list-group-item bg-transparent text-secondary px-0 py-2 border-secondary border-opacity-25">
+                <i class="bi bi-exclamation-circle-fill text-warning me-2"></i> {{ item }}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if exp.get('detected_tokens') %}
+        <div class="mb-4">
+          <h6 class="text-secondary small text-uppercase fw-semibold mb-2">Flagged Sensitive Tokens:</h6>
+          <div class="d-flex flex-wrap gap-2">
+            {% for token in exp['detected_tokens'] %}
+              <span class="badge bg-danger bg-opacity-25 text-danger border border-danger px-2 py-1">
+                {{ token }}
+              </span>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="alert alert-dark border border-secondary border-opacity-25 bg-dark bg-opacity-50 text-secondary small mt-auto mb-0">
+        <strong class="text-white d-block mb-1"><i class="bi bi-info-circle text-info me-1"></i> Technical Advisory</strong>
+        Predictions reflect statistical lexical correlations learned by the model. Zero claims of absolute infallibility are made.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PhishShield AI{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+  <div>
+    <h3 class="fw-bold text-white mb-1">
+      <i class="bi bi-shield-shaded text-info me-2"></i>Security Analytics Dashboard
+    </h3>
+    <p class="text-secondary mb-0">
+      Real-time phishing threat detection overview for <strong class="text-white">{{ current_user.username }}</strong>
+    </p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{{ url_for('main.export_user_scans_csv') }}" data-device-timezone class="btn btn-outline-info btn-sm">
+      <i class="bi bi-download me-1"></i> Export My Scans (CSV)
+    </a>
+    <a href="{{ url_for('main.scanner') }}" class="btn btn-cyber-primary btn-sm">
+      <i class="bi bi-plus-circle me-1"></i> New Scan
+    </a>
+  </div>
+</div>
+
+<!-- Quick Stat Widgets -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-widget">
+      <div>
+        <div class="stat-value text-white">{{ total_scans }}</div>
+        <div class="stat-label">Total URLs Scanned</div>
+      </div>
+      <div class="stat-icon" style="background-color: rgba(37, 99, 235, 0.2); color: #60A5FA; border-color: rgba(37, 99, 235, 0.4);">
+        <i class="bi bi-search"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-widget">
+      <div>
+        <div class="stat-value" style="color: #F87171;">{{ phishing_count }}</div>
+        <div class="stat-label">Phishing Detected</div>
+      </div>
+      <div class="stat-icon" style="background-color: rgba(244, 63, 94, 0.2); color: #FB7185; border-color: rgba(244, 63, 94, 0.4);">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-widget">
+      <div>
+        <div class="stat-value" style="color: #34D399;">{{ legitimate_count }}</div>
+        <div class="stat-label">Legitimate URLs</div>
+      </div>
+      <div class="stat-icon" style="background-color: rgba(16, 185, 129, 0.2); color: #34D399; border-color: rgba(16, 185, 129, 0.4);">
+        <i class="bi bi-shield-check"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-widget">
+      <div>
+        <div class="stat-value text-info">
+          {% if active_model %}
+            {{ (active_model.accuracy * 100) | round(1) }}%
+          {% else %}
+            N/A
+          {% endif %}
+        </div>
+        <div class="stat-label">Model Accuracy</div>
+      </div>
+      <div class="stat-icon" style="background-color: rgba(34, 211, 238, 0.2); color: #22D3EE; border-color: rgba(34, 211, 238, 0.4);">
+        <i class="bi bi-cpu"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scanner Quick Input & Risk Distribution Chart -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <div class="cyber-card p-4 h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h5 class="text-white fw-bold mb-0">
+            <i class="bi bi-lightning-charge text-warning me-2"></i>Quick URL Lexical Scanner
+          </h5>
+          <span class="badge badge-evaluated">Zero Outbound Fetching</span>
+        </div>
+        <p class="text-secondary small mb-3">
+          Submit any suspicious link to extract 13 lexical indicators, assess risk score (0-100), and obtain instant machine-learning prediction.
+        </p>
+
+        <form id="urlScanForm" method="POST" action="{{ url_for('main.scan') }}">
+          {{ form.hidden_tag() }}
+          <div class="input-group mb-3">
+            <span class="input-group-text bg-dark border-secondary text-info">
+              <i class="bi bi-link-45deg fs-5"></i>
+            </span>
+            {{ form.url(id="urlInput", class="form-control cyber-input", placeholder="e.g. https://security-verify-account.com/login.php") }}
+            <button id="scanSubmitBtn" class="btn btn-cyber-primary px-4" type="submit">
+              <span id="scanSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+              <span id="scanBtnText"><i class="bi bi-shield-shaded me-1"></i> Analyze</span>
+            </button>
+          </div>
+          {% for error in form.url.errors %}
+            <div class="text-danger small mb-2 fw-semibold">{{ error }}</div>
+          {% endfor %}
+        </form>
+      </div>
+
+      <div class="p-3 rounded mt-3" style="background-color: #0A1222; border: 1px solid var(--border-color);">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <span class="text-secondary small fw-semibold"><i class="bi bi-cpu me-1 text-info"></i> Active Inference Model:</span>
+          <span class="text-info fw-bold small">
+            {% if active_model %}
+              {{ active_model.name }} <code class="ms-1 code-version">{{ active_model.version }}</code>
+            {% else %}
+              Baseline Heuristic Model v1.0
+            {% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="cyber-card p-4 h-100">
+      <h5 class="text-white fw-bold mb-3">
+        <i class="bi bi-pie-chart text-info me-2"></i>Risk Category Distribution
+      </h5>
+      <div style="position: relative; height: 230px;">
+        <canvas id="riskDistributionChart"
+          data-low="{{ risk_distribution['Low'] }}"
+          data-moderate="{{ risk_distribution['Moderate'] }}"
+          data-high="{{ risk_distribution['High'] }}"
+          data-critical="{{ risk_distribution['Critical'] }}">
+        </canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Scans Table -->
+<div class="cyber-card mb-4">
+  <div class="cyber-card-header d-flex align-items-center justify-content-between">
+    <h5 class="text-white fw-bold mb-0">
+      <i class="bi bi-clock-history me-2 text-info"></i>Recent Scan Activity
+    </h5>
+    <a href="{{ url_for('main.history') }}" class="btn btn-outline-secondary btn-sm">
+      View All History <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-cyber mb-0 table-wide-lg">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Target URL</th>
+          <th>Prediction</th>
+          <th>Risk Score</th>
+          <th>Category</th>
+          <th>Latency</th>
+          <th>Scanned At</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if recent_scans %}
+          {% for scan in recent_scans %}
+            <tr>
+              <td><code class="code-id">#{{ scan.id }}</code></td>
+              <td>
+                <span class="text-truncate d-inline-block font-monospace text-white fw-medium" style="max-width: 320px;" title="{{ scan.url }}">
+                  {{ scan.url }}
+                </span>
+              </td>
+              <td>
+                {% if scan.prediction_label == 'phishing' %}
+                  <span class="badge-phishing"><i class="bi bi-exclamation-triangle-fill me-1"></i> Phishing</span>
+                {% else %}
+                  <span class="badge-legitimate"><i class="bi bi-check-circle-fill me-1"></i> Legitimate</span>
+                {% endif %}
+              </td>
+              <td>
+                <strong class="text-white fs-6">{{ scan.risk_score }}</strong> <span class="text-secondary small">/ 100</span>
+              </td>
+              <td>
+                <span class="badge badge-risk-{{ scan.risk_category | lower }}">
+                  {{ scan.risk_category }}
+                </span>
+              </td>
+              <td><span class="text-secondary fw-semibold">{{ scan.latency_ms }} ms</span></td>
+              <td><span class="text-secondary">{{ scan.created_at.strftime('%b %d, %H:%M') }}</span></td>
+              <td class="text-end">
+                <a href="{{ url_for('main.scan_detail', scan_id=scan.id) }}" class="btn btn-sm btn-outline-info me-1" title="View Inspection Details">
+                  <i class="bi bi-eye me-1"></i> Details
+                </a>
+                <a href="{{ url_for('main.scan_audit_pdf', scan_id=scan.id) }}" data-device-timezone class="btn btn-sm btn-outline-danger" title="Download Audit PDF">
+                  <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="8" class="text-center py-5 text-secondary">
+              <i class="bi bi-shield-slash fs-1 d-block mb-2 text-info opacity-75"></i>
+              <span class="fs-6 d-block">No scans recorded yet.</span>
+              <small class="text-muted">Enter a URL above to perform your first real-time threat analysis.</small>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
